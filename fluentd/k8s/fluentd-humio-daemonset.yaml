@@ -1,0 +1,56 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: kube-system
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+    log-type: fluentd
+    disable-logging: "false"
+spec:
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+        log-type: fluentd
+        disable-logging: "false"
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: fluentd
+        image: benjvi/fluentd-humio-kubernetes-daemonset:v0.12-alpine
+        imagePullPolicy: Always
+        env:
+          - name: FLUENT_HUMIO_HOST
+            value: "go.humio.com"
+          - name: FLUENT_HUMIO_DATA_SPACE
+            value: "KubeIntegration"
+          - name: FLUENT_HUMIO_INGEST_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: fluentd-humio-ingest-token
+                key: token
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
