@@ -22,8 +22,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: fluentd
-        image: benjvi/fluentd-humio-kubernetes-daemonset:v0.12-alpine
-        imagePullPolicy: Always
+        image: benjvi/fluentd-humio-k8s:v0.12-alpine
         env:
           - name: FLUENT_HUMIO_HOST
             value: "go.humio.com"
