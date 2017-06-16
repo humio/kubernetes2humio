@@ -37,7 +37,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 8082
+            port: 8084
             scheme: HTTP
           initialDelaySeconds: 180
           periodSeconds: 10
