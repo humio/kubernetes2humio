@@ -5,6 +5,7 @@ metadata:
   labels:
     k8s-app: eventer
     version: v1.3.0
+    log-type: eventer
   name: eventer-v1.3.0
   namespace: kube-system
 spec:
@@ -13,6 +14,7 @@ spec:
     matchLabels:
       k8s-app: eventer
       version: v1.3.0
+      log-type: eventer
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -25,6 +27,7 @@ spec:
       labels:
         k8s-app: eventer 
         version: v1.3.0
+        log-type: eventer
     spec:
       containers:
       - command:
