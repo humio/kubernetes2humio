@@ -7,7 +7,7 @@ Contains components for shipping logs from kubernetes clusters to humio.
 Overview
 --------
 
-Here, fluentd is used to forward *application-* and *host-* level logs from each kubernetes node to humio server. This extends the standard setup [here](https://github.com/fluent/fluentd-kubernetes-daemonset) from fluentd for log forwarding in kubernetes. For clusters where the master nodes are not accessible (eg on GCP) we use eventer to expose events occurring in the kubernetes control plane. 
+Here, fluentd is used to forward *application-* and *host-* level logs from each kubernetes node to humio server. This extends the standard setup [here](https://github.com/fluent/fluentd-kubernetes-daemonset) from fluentd for log forwarding in kubernetes. Heapster is deployed so for publishing various aggregated metrics to humio. For clusters where the master nodes are not accessible (eg on GCP) we use eventer to expose events occurring in the kubernetes control plane. 
 
 Getting Started
 ---------------
@@ -51,8 +51,9 @@ Metrics
 -------
 
 In addition to ingesting logs and events it can also be helpful to ingest metrics into humio. The standard component for metrics collection is heapster, so that is what we use here to easily get hold of metrics aggregated for hosts, namespaces, pods, containers, and the cluster.  As with eventer, heapster is able to use stdout as a sink, however the existing multi-line formatting is not readily parseable. To solve this, we use a [forked version](https://github.com/benjvi/heapster/tree/json-sink) which can output metrics data in a predictable json structure. In this structure:
- - A single log entry/json document is created for each MetricSet (roughly -  each document contains a set of metrics per [aggregation object](https://github.com/kubernetes/heapster/blob/master/docs/storage-schema.md#user-content-aggregates)). This division is important to bound the maximum size of log entries.
+ - A single log entry/json document is created for each MetricSet. MetricSets are defined for logical components of each [aggregation object](https://github.com/kubernetes/heapster/blob/master/docs/storage-schema.md#user-content-aggregates) - e.g. services on a host. This division is important to bound the maximum size of log entries.
  - Key-value metrics info can be found under the 'Metrics' and 'LabeledMetrics' keys. In case of LabeledMetrics the value is given as a list, to allow for further disambiguation or metrics according to the `resource_id` label
+ - All information defined in the [storage-schema docs](https://github.com/kubernetes/heapster/blob/master/docs/storage-schema.md) is passed on
 
 Control-plane Events
 --------------------
