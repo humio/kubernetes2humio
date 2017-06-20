@@ -19,8 +19,9 @@ Getting Started
  1. Setup your data space in humio and create an ingest token
  2. Base64 encode your token by running `printf 'TOKEN' | base64` and update `fluentd/k8s/fluentd-humio-ingest-token-secret.yaml` with the value 
  3. Create fluentd resources in kubernetes: `kubectl apply -f fluentd/k8s/`
- 4. If master nodes are not scheduleable in your cluster, also create eventer to expose control-plane events: `kubectl apply -f eventer/`
- 4. Logs start appearing in humio!
+ 4. Create heapster to send metrics to humio: `kubectl apply -f heapster/`
+ 5. If master nodes are not scheduleable in your cluster, also create eventer to expose control-plane events: `kubectl apply -f eventer/`
+ 6. Logs start appearing in humio!
 
 Node-level Forwarding
 ---------------------
@@ -46,7 +47,15 @@ If you need to make further customizations, you will need to mount in an altered
 
 As noted above, the 'default' service account is used by the fluentd metadata plugin to lookup pod/namespace information. This is not particularly in line with the developing RBAC model for service accounts in kubernetes, but causes few problems in the kube-system namespace where services are assumed to be somewhat root-like. Since 'default' service account is available to all pods in a namespace, careful thought is recommended when assigning permissions to this account to get fluentd to work outside the kube-system namespace. 
 
+Metrics
+-------
+
+In addition to ingesting logs and events it can also be helpful to ingest metrics into humio. The standard component for metrics collection is heapster, so that is what we use here to easily get hold of metrics aggregated for hosts, namespaces, pods, containers, and the cluster.  As with eventer, heapster is able to use stdout as a sink, however the existing multi-line formatting is not readily parseable. To solve this, we use a [forked version](https://github.com/benjvi/heapster/tree/json-sink) which can output metrics data in a predictable json structure. In this structure:
+ - A single log entry/json document is created for each MetricSet (roughly -  each document contains a set of metrics per [aggregation object](https://github.com/kubernetes/heapster/blob/master/docs/storage-schema.md#user-content-aggregates)). This division is important to bound the maximum size of log entries.
+ - Key-value metrics info can be found under the 'Metrics' and 'LabeledMetrics' keys. In case of LabeledMetrics the value is given as a list, to allow for further disambiguation or metrics according to the `resource_id` label
+
 Control-plane Events
 --------------------
 
-Appropriate for clusters where fluentd cannot run on master nodes, the eventer component of [heapster](github.com/kubernetes/heapster) is used to retrieve cluster events from the API server. We forward events to fluentd by simply printing events to stdout, providing a consistent interface for logs coming out of kubernetes. Eventer runs as a deployment with a single instance handling all cluster events, regardless of cluster size. As with heapster, it makes use of the addon-resizer component to update requested resources as load on the eventer, causing the eventer pod to get redeployed as cluster activity grows past certain thresholds. 
+Appropriate for clusters where fluentd cannot run on master nodes, the eventer component of [heapster](github.com/kubernetes/heapster) is used to retrieve cluster events from the API server. We forward events to fluentd by simply printing events to stdout, providing a consistent interface for logs coming out of kubernetes. Eventer runs as a deployment with a single instance handling all cluster events, regardless of cluster size. As with heapster, it makes use of the addon-resizer component to update requested resources as load on the eventer, causing the eventer pod to get redeployed as cluster activity grows past certain thresholds.
+
