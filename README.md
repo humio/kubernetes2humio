@@ -1,8 +1,8 @@
 
-k8s-humio - Ship Logs from Kubernetes to Humio
-==============================================
+k8s-humio - Ship Logs, Events and Metrics from Kubernetes to Humio
+==================================================================
 
-Contains components for shipping logs from kubernetes clusters to humio.
+Contains components for shipping logs, events and metrics from kubernetes clusters to [humio](https://humio.com).
 
 Overview
 --------
