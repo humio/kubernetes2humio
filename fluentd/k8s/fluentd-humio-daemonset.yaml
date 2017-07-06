@@ -25,9 +25,9 @@ spec:
         image: pmech/kubernetes2humio
         env:
           - name: FLUENT_HUMIO_HOST
-            value: "go.humio.com"
+            value: "<HUMIO-SERVER-HOSTNAME>"
           - name: FLUENT_HUMIO_DATA_SPACE
-            value: "KubeIntegration"
+            value: "<HUMIO-DATA-SPACE>"
           - name: FLUENT_HUMIO_INGEST_TOKEN
             valueFrom:
               secretKeyRef:
