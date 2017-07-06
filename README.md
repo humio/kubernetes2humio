@@ -1,23 +1,22 @@
 
-k8s-humio - Ship Logs, Events and Metrics from Kubernetes to Humio
-==================================================================
+kubernetes2humio - Ship Logs from Kubernetes to Humio
+=====================================================
 
-Contains components for shipping logs, events and metrics from
-kubernetes clusters to [humio](https://humio.com).
+Contains components for shipping logs and events from kubernetes
+clusters to [Humio](https://humio.com).
 
 Overview
 --------
 
 Here, fluentd is used to forward *application-* and *host-* level logs
-from each kubernetes node to humio server. This extends the standard
+from each kubernetes node to a Humio server. This extends the standard
 setup [here](https://github.com/fluent/fluentd-kubernetes-daemonset)
-from fluentd for log forwarding in kubernetes. Heapster is deployed so
-for publishing various aggregated metrics to humio. For clusters where
-the master nodes are not accessible (eg on GCP) we use eventer to
-expose events occurring in the kubernetes control plane.
+from fluentd for log forwarding in kubernetes. For clusters where the
+master nodes are not accessible (eg. on GCP) we use eventer to expose
+events occurring in the kubernetes control plane.
 
-Getting Started
----------------
+Quick Start
+-----------
 
 0. Pre-requisites:
    - Kubernetes cluster
@@ -25,30 +24,34 @@ Getting Started
    - Default service account with read privileges to API server for use
      by the [kubernetes metadata filter
      plugin](https://github.com/fabric8io/fluent-plugin-kubernetes_metadata_filter). This
-     shouldbe present by default in the kube-system namespace (even in
+     should be present by default in the kube-system namespace (even in
      kubernetes 1.6 with RBAC enabled)
-1. Setup your data space in humio and create an ingest token
-2. Base64 encode your token by running `printf 'TOKEN' | base64` and
-   update `fluentd/k8s/fluentd-humio-ingest-token-secret.yaml` with
-   the value
-3. Create fluentd resources in kubernetes: `kubectl apply -f
-   fluentd/k8s/`
-4. Create heapster to send metrics to humio: `kubectl apply -f
-   heapster/`
-5. If master nodes are not scheduleable in your cluster, also create
-   eventer to expose control-plane events: `kubectl apply -f
+1. Setup your data space in Humio and create an
+   [ingest-token](https://go.humio.com/docs/ingest-tokens/index.html)
+2. Base64 encode your ingest-token by running `printf '<TOKEN>' | base64` and update
+   [`fluentd/k8s/fluentd-humio-ingest-token-secret.yaml`](fluentd/k8s/fluentd-humio-ingest-token-secret.yaml#L8) with the value
+3. Update env. vars. [`FLUENT_HUMIO_HOST`](fluentd/k8s/fluentd-humio-daemonset.yaml#L27)
+   and [`FLUENT_HUMIO_DATA_SPACE`](fluentd/k8s/fluentd-humio-daemonset.yaml#L29)
+   in [`fluentd/k8s/fluentd-humio-daemonset.yaml`](fluentd/k8s/fluentd-humio-daemonset.yaml)
+4. Create fluentd resources in kubernetes: `kubectl apply -f
+   fluentd/k8s/` 5. Logs start appearing in Humio!
+
+Optional:
+
+5. If master nodes are not scheduleable in your cluster, you can also
+   create eventer to expose control-plane events: `kubectl apply -f
    eventer/`
-6. Logs start appearing in humio!
+6. Add `log-type` pod labels to designate Humio parsers
 
 Node-level Forwarding
 ---------------------
 
-In `fluentd/docker-image` a docker image is defined which specifies
-how to forward to humio (with other settings, like log sources reused
-from the base image). Kubernetes manifests are defined in
-`fluentd/k8s`: a daemonset will deploy fluentd pods across every
+In `fluentd/docker-image/` a docker image is defined which specifies
+how to forward logs to Humio (with other settings, like log sources
+reused from the base image). Kubernetes manifests are defined in
+`fluentd/k8s/`: a daemonset will deploy fluentd pods across every
 worker node inside the *kube-system* namespace, and each pod will read
-the humio ingest token from the `fluentd-humio-ingest-token` secret.
+the Humio ingest token from the `fluentd-humio-ingest-token` secret.
 
 As per the normal setup, fluentd output is buffered, and uses TLS for
 nice log confidentiality. It also appends kubernetes metadata such and
@@ -57,11 +60,12 @@ standard json structure.
 
 ### Log types
 
-For any application running as a pod in kubernetes, the value of the
-**log-type** label added to the pod will be used to determine the
-parser humio uses to parse log lines arriving from the pod. Each value
-must have a corresponding parser in humio. If the label is unspecified
-or doesn't correspond to a parser then pod logs will be left as
+If your pod logs using JSON, Humio will parse the fields as excepted.
+If your logs are text based, e.g. an nginx access log, you can set the
+label `log-type` on a pod. Humio will use the log-type label to
+determine which parser to apply to the log line. Using a parser you
+can retain the structure in the logs. If the label is unspecified or
+doesn't correspond to a parser then pod logs will be left as
 unstructured text.
 
 ### Fluentd Container Variables
@@ -69,10 +73,9 @@ unstructured text.
 We expose three environment variables so the daemonset configuration
 can be easily changed in different environments:
 
-- **FLUENT_HUMIO_HOST**: humio host
-- **FLUENT_HUMIO_DATA_SPACE**: used to parameterize the path to humio
-    bulk elastic ingest API for your data space
-- **FLUENT_HUMIO_INGEST_TOKEN**: authorization to push logs into humio
+- **FLUENT_HUMIO_HOST**: Humio host
+- **FLUENT_HUMIO_DATA_SPACE**: your data space
+- **FLUENT_HUMIO_INGEST_TOKEN**: authorization to push logs into Humio
 
 If you need to make further customizations, you will need to mount in
 an altered version of the fluentd config files
@@ -90,31 +93,6 @@ namespace where services are assumed to be somewhat root-like. Since
 careful thought is recommended when assigning permissions to this
 account to get fluentd to work outside the kube-system namespace.
 
-Metrics
--------
-
-In addition to ingesting logs and events it can also be helpful to
-ingest metrics into humio. The standard component for metrics
-collection is heapster, so that is what we use here to easily get hold
-of metrics aggregated for hosts, namespaces, pods, containers, and the
-cluster.  As with eventer, heapster is able to use stdout as a sink,
-however the existing multi-line formatting is not readily
-parseable. To solve this, we use a [forked
-version](https://github.com/benjvi/heapster/tree/json-sink) which can
-output metrics data in a predictable json structure. In this
-structure: - A single log entry/json document is created for each
-MetricSet. MetricSets are defined for logical components of each
-[aggregation
-object](https://github.com/kubernetes/heapster/blob/master/docs/storage-schema.md#user-content-aggregates)
-- e.g. services on a host. This division is important to bound the
-maximum size of log entries.  - Key-value metrics info can be found
-under the 'Metrics' and 'LabeledMetrics' keys. In case of
-LabeledMetrics the value is given as a list, to allow for further
-disambiguation or metrics according to the `resource_id` label - All
-information defined in the [storage-schema
-docs](https://github.com/kubernetes/heapster/blob/master/docs/storage-schema.md)
-is passed on
-
 Control-plane Events
 --------------------
 
@@ -128,3 +106,10 @@ regardless of cluster size. As with heapster, it makes use of the
 addon-resizer component to update requested resources as load on the
 eventer, causing the eventer pod to get redeployed as cluster activity
 grows past certain thresholds.
+
+What about metrics?
+-------------------
+
+We are currently working on integrating metrics from
+[heapster](https://github.com/kubernetes/heapster) into Humio.  Stay
+tuned...
