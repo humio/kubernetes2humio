@@ -25,7 +25,7 @@ spec:
         image: humio/kubernetes2humio
         env:
           - name: FLUENT_HUMIO_HOST
-            value: "<HUMIO-SERVER-HOSTNAME>"
+            value: "<HUMIO-SERVER-HOSTNAME ex: go.humio.com>"
           - name: FLUENT_HUMIO_DATA_SPACE
             value: "<HUMIO-DATA-SPACE>"
           - name: FLUENT_HUMIO_INGEST_TOKEN
