@@ -22,7 +22,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: fluentd
-        image: pmech/kubernetes2humio
+        image: humio/kubernetes2humio
         env:
           - name: FLUENT_HUMIO_HOST
             value: "<HUMIO-SERVER-HOSTNAME>"
