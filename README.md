@@ -34,14 +34,15 @@ Quick Start
    and [`FLUENT_HUMIO_DATA_SPACE`](fluentd/k8s/fluentd-humio-daemonset.yaml#L29)
    in [`fluentd/k8s/fluentd-humio-daemonset.yaml`](fluentd/k8s/fluentd-humio-daemonset.yaml)
 4. Create fluentd resources in kubernetes: `kubectl apply -f
-   fluentd/k8s/` 5. Logs start appearing in Humio!
+   fluentd/k8s/`
+5. Logs start appearing in Humio!
 
 Optional:
 
-5. If master nodes are not scheduleable in your cluster, you can also
+6. If master nodes are not scheduleable in your cluster, you can also
    create eventer to expose control-plane events: `kubectl apply -f
    eventer/`
-6. Add `log-type` pod labels to designate Humio parsers
+7. Add `log-type` pod labels to designate Humio parsers
 
 Node-level Forwarding
 ---------------------
