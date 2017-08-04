@@ -8,10 +8,10 @@ clusters to [Humio](https://humio.com).
 Overview
 --------
 
-Here, fluentd is used to forward *application-* and *host-* level logs
-from each kubernetes node to a Humio server. This extends the standard
-setup [here](https://github.com/fluent/fluentd-kubernetes-daemonset)
-from fluentd for log forwarding in kubernetes. For clusters where the
+Fluentd is used to forward *application-* and *host-* level logs
+from each kubernetes node to a Humio server. This extends the [standard
+setup](https://github.com/fluent/fluentd-kubernetes-daemonset)
+from Fluentd for log forwarding in kubernetes. For clusters where the
 master nodes are not accessible (eg. on GCP) we use eventer to expose
 events occurring in the kubernetes control plane.
 
@@ -55,7 +55,7 @@ worker node inside the *kube-system* namespace, and each pod will read
 the Humio ingest token from the `fluentd-humio-ingest-token` secret.
 
 As per the normal setup, fluentd output is buffered, and uses TLS for
-nice log confidentiality. It also appends kubernetes metadata such and
+nice log confidentiality. It also appends kubernetes metadata such as
 pod name and namespace to each log entry, wrapping raw logs in a
 standard json structure.
 
