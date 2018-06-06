@@ -1,3 +1,7 @@
+# DEPRECATION
+
+This repository has been deprecated in favour of the [Fluent-bit chart](https://docs.humio.com/sending_logs_to_humio/integrations/kubernetes/)
+
 
 kubernetes2humio - Ship Logs from Kubernetes to Humio
 =====================================================
